@@ -22,6 +22,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kkyoungs.stopwatch.ui.theme.StopWatchTheme
 import java.util.*
 import kotlin.concurrent.timer
@@ -30,128 +31,159 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
+            val viewModel = viewModel<MainViewModel>()
 
-        }
-    }
-}
+            val sec = viewModel.sec.value
+            val milli = viewModel.milli.value
+            val isRunning = viewModel.isRunning.value
+            val lapTimes = viewModel.lapTimes.value
 
-
-//기능
-class MainViewModel:ViewModel(){
-
-    private var time = 0
-    private var timerTask : Timer? = null
-
-    private val _isRunning = mutableStateOf(false)
-    val isRunning: State<Boolean> = _isRunning
-
-    private val _sec = mutableStateOf(0)
-    val sec: State<Int> = _sec
-
-    private val _milli = mutableStateOf(0)
-    val milli: State<Int> = _milli
-
-    private val _lapTimes= mutableStateOf(mutableListOf<String>())
-    val lapTimes : State<List<String>> = _lapTimes
-
-    private var lap = 1
-
-    fun start(){
-        _isRunning.value = true
-
-        timerTask = timer(period = 10){
-            time ++
-            _sec.value = time/100
-            _milli.value = time % 100
+            MainScreen(
+                sec = sec,
+                milli = milli,
+                isRunning = isRunning,
+                lapTimes = lapTimes,
+                onReset = { viewModel.reset() },
+                onToggle = { running ->
+                    if (running) {
+                        viewModel.pause()
+                    } else {
+                        viewModel.start()
+                    }
+                },
+                onLapTime = { viewModel.recordLapTime() })
         }
     }
 
-    fun pause(){
-        _isRunning.value = false
-        timerTask?.cancel()
-    }
-    fun reset(){
-        timerTask?.cancel()
-        time = 0
-        _isRunning.value = false
-        _sec.value = 0
-        _milli.value= 0
 
-        _lapTimes.value.clear()
-        lap = 1
+    //기능
+    class MainViewModel : ViewModel() {
 
-    }
-    fun recordLapTime(){
-        _lapTimes.value.add(0, "$lap Lap : ${sec.value}. ${milli.value}")
-        lap++
-    }
-}
+        private var time = 0
+        private var timerTask: Timer? = null
 
-@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun MainScreen(
-    sec: Int,
-    milli: Int,
-    isRunning:Boolean,
-    lapTimes : List<String>,
-    onReset : () -> Unit,
-    onToggle : (Boolean) -> Unit,
-    onLapTimer: () -> Unit,
-){
-    Scaffold(
-        topBar = {MediumTopAppBar(title = { Text("stopWatch")}) }
-    ){
-        Column (
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
+        private val _isRunning = mutableStateOf(false)
+        val isRunning: State<Boolean> = _isRunning
 
-                ){
-            Spacer(modifier = Modifier.height(40.dp))
-            Row() {
-                Text(text = "$sec", fontSize = 100.sp)
-                Text(text = "$milli")
+        private val _sec = mutableStateOf(0)
+        val sec: State<Int> = _sec
+
+        private val _milli = mutableStateOf(0)
+        val milli: State<Int> = _milli
+
+        private val _lapTimes = mutableStateOf(mutableListOf<String>())
+        val lapTimes: State<List<String>> = _lapTimes
+
+        private var lap = 1
+
+        fun start() {
+            _isRunning.value = true
+
+            timerTask = timer(period = 10) {
+                time++
+                _sec.value = time / 100
+                _milli.value = time % 100
             }
-            Spacer(modifier = Modifier.height(16.dp))
-            Column (
-                modifier = Modifier
-                    .weight(1f)
-                    .verticalScroll(rememberScrollState()),
-                    ){
-                lapTimes.forEach{
-                    lapTimes -> Text(text = lapTimes)
-                }
-                
-            }
-            Row(modifier = Modifier
-                .padding(8.dp)
-                .fillMaxWidth(), horizontalArrangement =  Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                
-                FloatingActionButton(
-                    onClick = { onReset() },
-                    Modifier.background(color = androidx.compose.ui.graphics.Color.Red)
+        }
+
+        fun pause() {
+            _isRunning.value = false
+            timerTask?.cancel()
+        }
+
+        fun reset() {
+            timerTask?.cancel()
+            time = 0
+            _isRunning.value = false
+            _sec.value = 0
+            _milli.value = 0
+
+            _lapTimes.value.clear()
+            lap = 1
+
+        }
+
+        fun recordLapTime() {
+            _lapTimes.value.add(0, "$lap Lap : ${sec.value}. ${milli.value}")
+            lap++
+        }
+    }
+
+    @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Composable
+    fun MainScreen(
+        sec: Int,
+        milli: Int,
+        isRunning: Boolean,
+        lapTimes: List<String>,
+        onReset: () -> Unit,
+        onToggle: (Boolean) -> Unit,
+        onLapTime: () -> Unit,
+    ) {
+        Scaffold(
+            topBar = { MediumTopAppBar(title = { Text("stopWatch") }) }
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+
                 ) {
-                    Image(painter = painterResource(id = R.drawable.baseline_refresh_24), contentDescription = "reset")
-
+                Spacer(modifier = Modifier.height(40.dp))
+                Row() {
+                    Text(text = "$sec", fontSize = 100.sp)
+                    Text(text = "$milli")
                 }
-                FloatingActionButton(
-                    onClick = { onToggle(isRunning) },
-                    Modifier.background(color = androidx.compose.ui.graphics.Color.Green)
+                Spacer(modifier = Modifier.height(16.dp))
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .verticalScroll(rememberScrollState()),
                 ) {
-                    Image(painter = painterResource(id = if (isRunning)R.drawable.baseline_pause_circle_outline_24 else R.drawable.baseline_play_circle_outline_24), contentDescription = "start/pause")
+                    lapTimes.forEach { lapTimes ->
+                        Text(text = lapTimes)
+                    }
 
                 }
-                Button(onClick = {
-                    onLapTimer()
-                }) {
-                    Text(text = "랩타임")
-                    
+                Row(
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+
+                    FloatingActionButton(
+                        onClick = { onReset() },
+                        Modifier.background(color = Color.Red)
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.baseline_refresh_24),
+                            contentDescription = "reset"
+                        )
+
+                    }
+                    FloatingActionButton(
+                        onClick = { onToggle(isRunning) },
+                        Modifier.background(color = Color.Green)
+                    ) {
+                        Image(
+                            painter = painterResource(id = if (isRunning) R.drawable.baseline_pause_circle_outline_24 else R.drawable.baseline_play_circle_outline_24),
+                            contentDescription = "start/pause"
+                        )
+
+                    }
+                    Button(onClick = {
+                        onLapTime()
+                    }) {
+                        Text(text = "랩타임")
+
+                    }
+
+
                 }
-                
-                
             }
         }
-    }
-        
 
+    }
 }
