@@ -17,6 +17,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -109,7 +110,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun MainScreen(
@@ -122,14 +122,14 @@ class MainActivity : ComponentActivity() {
         onLapTime: () -> Unit,
     ) {
         Scaffold(
-            topBar = { MediumTopAppBar(title = { Text("stopWatch") }) }
-        ) {
+            topBar = { MediumTopAppBar(colors = TopAppBarDefaults.mediumTopAppBarColors(containerColor = MaterialTheme.colorScheme.primaryContainer, titleContentColor =  MaterialTheme.colorScheme.primary), title = { Text("stopWatch") }) }
+        ) {innerPadding ->
             Column(
                 modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,
 
                 ) {
-                Spacer(modifier = Modifier.height(40.dp))
+                Spacer(modifier = Modifier.height(200.dp))
                 Row() {
                     Text(text = "$sec", fontSize = 100.sp)
                     Text(text = "$milli")
